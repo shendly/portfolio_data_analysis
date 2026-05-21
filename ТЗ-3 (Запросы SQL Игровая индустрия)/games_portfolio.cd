@@ -1,0 +1,614 @@
+
+1. Таблица players (игроки)
+
+Хранит аккаунты пользователей.
+
+Поля:
+
+player_id (PK) — уникальный ID игрока
+username — никнейм
+email — почта
+created_at — дата регистрации
+level — уровень аккаунта
+
+Назначение:
+Основная таблица пользователей игры.
+
+2. Таблица characters (персонажи)
+
+Игровые персонажи, принадлежащие игрокам.
+
+Поля:
+
+character_id — ID персонажа
+player_id (PK)  — владелец
+name — имя персонажа
+class — класс (воин, маг и т.д.)
+
+
+
+3. Таблица items (предметы)
+
+Все игровые предметы.
+
+Поля:
+
+item_id (PK) — ID предмета
+name — название
+type — тип (оружие, броня, зелье)
+rarity — редкость
+value — стоимость
+
+Назначение:
+Каталог всех предметов в игре.
+
+4. Таблица inventory (инвентарь)
+
+Связь персонажей и предметов (многие-ко-многим).
+
+Поля:
+
+inventory_id (PK) — ID записи
+character_id (FK → characters.character_id) — персонаж
+item_id (FK → items.item_id) — предмет
+quantity — количество
+
+Назначение:
+Показывает, какие предметы есть у персонажа.
+
+5. Таблица quests (квесты)
+
+Игровые задания.
+
+Поля:
+
+quest_id (PK) — ID квеста
+title — название
+reward_gold — награда (золото)
+reward_exp — опыт
+
+Назначение:
+Список всех доступных квестов.
+
+
+
+***********************************************************************
+
+
+Таблица №1
+CREATE TABLE players(
+	player_id INTEGER PRIMARY KEY,
+	username VARCHAR(100) NOT NULL,
+	email VARCHAR(150),
+	created_at DATE NOT NULL,
+	level INTEGER
+)
+
+Таблица №2
+CREATE TABLE characters(
+	character_id INTEGER,
+	player_id INTEGER PRIMARY KEY,
+	name VARCHAR(150),
+	class VARCHAR(50)
+)
+
+Таблица №3
+CREATE TABLE inventory(
+	inventory_id INTEGER PRIMARY KEY,
+	player_id INTEGER,
+	item_id INTEGER,
+	quantity INTEGER
+)
+
+
+Таблица №4
+CREATE TABLE items(
+	item_id INTEGER PRIMARY KEY,
+	name VARCHAR(150),
+	type VARCHAR(100),
+	rarity VARCHAR(100),
+	value INTEGER
+)
+
+Таблица №5
+CREATE TABLE quests(
+	quest_id INTEGER PRIMARY KEY,
+	title VARCHAR(300),
+	reward_gold INTEGER,
+	reward_exp INTEGER
+)
+
+
+
+*****************************************************************************************
+
+
+🟢 1. БАЗА (SELECT, WHERE)
+
+Задача 1
+Вывести всех игроков, зарегистрированных за последний месяц.
+
+```sql
+select * 
+from players
+WHERE created_at >= DATE_TRUNC('month', NOW())
+
+Задача 2
+Найти игроков выше 20 уровня.
+
+```sql
+select * 
+from players
+where level >= '20'
+
+Задача 3
+Вывести всех персонажей класса "маг".
+
+```sql
+select name
+from characters
+where class = 'Маг'
+
+
+Задача 4
+Найти предметы редкости "легендарный".
+
+```sql
+select name
+from items
+where rarity = 'легендарный'
+
+Задача 5
+Вывести персонажей, созданных в январе 2026.
+
+```sql
+select username
+from players
+WHERE EXTRACT(MONTH FROM created_at) = 1
+  AND EXTRACT(YEAR FROM created_at) = 2026;
+
+
+🟡 2. АГРЕГАЦИИ
+
+Задача 6
+Посчитать количество игроков.
+
+```sql
+select count(*)
+from players
+
+Задача 7
+Найти средний уровень игроков.
+
+```sql
+select avg(level)
+from players
+
+Задача 8
+Посчитать средний уровень по каждому месяцу.
+
+```sql
+select DATE_TRUNC('month', created_at) as month, avg(level)
+from players
+group by DATE_TRUNC('month', created_at)
+order by DATE_TRUNC('month', created_at) asc
+
+
+Задача 9
+Посчитать количество предметов каждого типа.
+
+```sql
+select type, count(type)
+from items
+group by type
+
+Задача 10
+Найти максимальный уровень персонажа в игре.
+
+```sql
+SELECT *
+FROM players
+WHERE level = (SELECT MAX(level) FROM players);
+
+🟠 3. JOIN 
+
+Задача 11
+Вывести игроков и их персонажей.
+```sql
+select username, class
+from players as t1
+left join characters as t2
+on t1.player_id = t2.player_id
+
+
+Задача 12
+Показать инвентарь каждого персонажа (предмет + количество).
+```sql
+select username, name, quantity
+from players as t1
+left join inventory as t2
+on t1.player_id = t2.player_id
+left join items as t3
+on t2.item_id = t3.item_id
+
+
+Задача 13
+Вывести username и имя персонажа.
+```sql
+select username, name
+from players as t1
+left join characters as t2
+on t1.player_id = t2.player_id
+
+Задача 14
+Найти персонажей без предметов.
+```sql
+select *
+from players as t1
+left join inventory as t2
+on t1.player_id = t2.player_id
+where inventory_id is null
+
+Задача 15
+Найти игроков без персонажей.
+select *
+from players as t1
+left join characters as t2
+on t1.player_id = t2.player_id
+where name is null
+
+🔵 4. ПРОДВИНУТЫЕ JOIN + АНАЛИТИКА
+
+Задача 16
+Посчитать общее количество предметов у каждого пользователя.
+
+```sql
+select username, sum(quantity) as sum_quantity
+from players as t1
+left join inventory as t2
+on t1.player_id = t2.player_id
+left join items as t3
+on t2.item_id = t3.item_id
+group by username
+
+Задача 17
+Найти топ-5 самых "богатых" персонажей (по сумме value предметов).
+```sql
+select username, sum(value) as top_value
+from players as t1
+left join inventory as t2
+on t1.player_id = t2.player_id
+left join items as t3
+on t2.item_id = t3.item_id
+where value is not null
+group by username
+order by top_value desc
+limit 5
+
+Задача 18
+Посчитать общую стоимость инвентаря каждого игрока.
+```sql 
+select username, sum(value) as top_value
+from players as t1
+left join inventory as t2
+on t1.player_id = t2.player_id
+left join items as t3
+on t2.item_id = t3.item_id
+where value is not null
+group by username
+order by top_value desc
+
+
+Задача 19
+Найти самый популярный предмет (чаще всего встречается).
+```sql 
+select COALESCE(name, 'Отсутствуют данные') as name_new, count(*)
+from players as t1
+left join inventory as t2
+on t1.player_id = t2.player_id
+left join items as t3
+on t2.item_id = t3.item_id
+group by name_new
+limit 1
+
+
+
+Задача 20
+Найти самый редкий используемый предмет.
+```sql
+select *
+from (select name, count(name)
+from players as t1
+left join inventory as t2
+on t1.player_id = t2.player_id
+left join items as t3
+on t2.item_id = t3.item_id
+where name is not null
+group by name)
+order by count
+limit 1
+
+
+🟣 5. ПОДЗАПРОСЫ
+
+Задача 21
+Найти персонажей с уровнем выше среднего.
+```sql
+select *
+from players
+where level >= (select avg(level) from players)
+order by level
+
+Задача 22
+Найти предметы дороже среднего значения.
+```sql
+select name, value
+from items
+where value >= (select avg(value) from items)
+
+🔴 6. ОКОННЫЕ ФУНКЦИИ
+
+Задача 23
+Пронумеровать персонажей каждого игрока (ROW_NUMBER).
+```sql
+SELECT 
+    ROW_NUMBER() OVER (PARTITION BY username ORDER BY name) AS character_number,
+    username,
+    name
+FROM 
+	(select *
+from players as t1
+left join characters as t2
+on t1.player_id = t2.player_id
+)
+
+
+Задача 24
+Найти самого прокачанного персонажа у каждого игрока (RANK).
+```sql
+select 
+RANK() OVER (PARTITION BY username ORDER BY level desc) AS character_number,
+    username,
+    name
+from (select *
+from players as t1
+left join characters as t2
+on t1.player_id = t2.player_id
+)
+
+
+Задача 25
+Посчитать накопительное количество предметов у игрока.
+```sql
+select username, SUM(quantity) OVER (PARTITION BY t1.player_id ORDER BY quantity) AS cumulative_quantity
+from players as t1
+left join inventory as t2
+on t1.player_id = t2.player_id
+
+
+
+Задача 26
+Найти разницу в уровне между персонажами игрока (LAG).
+SELECT 
+    username,
+    level,
+    LAG(level) OVER (ORDER BY level) AS prevs_level,
+    level - LAG(level) OVER (ORDER BY level) AS level_diff
+FROM players
+ORDER BY level asc
+
+
+Задача 27
+Ранжировать игроков по суммарной стоимости инвентаря.
+```sql
+select username, rank() over (order by sum_value DESC) AS rank
+from(
+select username, sum(value) as sum_value
+from players t1
+left join inventory t2
+on t1.player_id = t2.player_id
+left join items t3
+on t2.item_id = t3.item_id
+where value is not null
+group by username
+order by sum_value desc
+)
+
+
+
+🟤 7. ИГРОВАЯ АНАЛИТИКА
+
+Задача 28 (Wealth Distribution)
+Распределение богатства игроков:
+
+разбить игроков на группы по стоимости инвентаря
+```sql
+select username, sum_value, case 
+        when sum_value > 30000 THEN 'богатый'
+        when sum_value >= 20000 AND sum_value <= 30000 THEN 'средний'
+        else 'бедный'
+    end as category
+from(
+select username, sum(value) as sum_value
+from players t1
+left join inventory t2
+on t1.player_id = t2.player_id
+left join items t3
+on t2.item_id = t3.item_id
+where value is not null
+group by username
+order by sum_value desc
+)
+
+
+Задача 29 (Top Players)
+Топ-5 игроков:
+
+по уровню
+по количеству персонажей
+по богатству
+
+```sql
+WITH top_level AS (select username, 'топ по уровню' as segment
+from players
+order by level desc
+limit 5
+),
+top_person as (
+select username, count (name), 'топ по количеству персонажей' as segment
+from players t1
+left join characters t2
+on t1.player_id = t2.player_id
+group by username
+order by count desc
+limit 5
+),
+top_value as (
+select username, sum(value) as sum_value, 'топ по богатству' as segment
+from players t1
+left join inventory t2
+on t1.player_id = t2.player_id
+left join items t3
+on t2.item_id = t3.item_id
+where value is not null
+group by username
+order by sum_value desc
+limit 5)
+
+select username,segment from top_level
+union
+select username,segment from top_person
+union
+select username,segment from top_value
+order by segment asc
+
+
+Задача 30 (Character Analysis)
+Самые популярные классы персонажей.
+```sql
+select class, count(class)
+from players t1
+left join characters t2
+on t1.player_id = t2.player_id
+group by class
+order by count desc
+
+
+⚫ 8. БИЗНЕС-КЕЙСЫ
+
+Задача 31 (Retention proxy)
+Найти игроков с более чем 1 персонажем (условный retention).
+```sql
+select *
+from (select username, count(name) as count_name
+from players t1
+left join characters t2
+on t1.player_id = t2.player_id
+group by username
+)
+where count_name > 1
+
+Задача 32 (Engagement)
+Определить самых активных игроков:
+
+много персонажей
+много предметов
+
+```sql
+WITH person_2 as (select *
+from (select username, count(name) as count_name, 'Больше 1 персонажа' as flag_person
+from players t1
+left join characters t2
+on t1.player_id = t2.player_id
+group by username
+)
+where count_name > 1
+),
+object as(
+select *
+from(select username, count(name), 'Больше 5 предметов'
+from players t1
+left join inventory t2
+on t1.player_id = t2.player_id
+left join items t3
+on t2.item_id = t3.item_id
+where value is not null
+group by username)
+where count > 5
+)
+
+select * from person_2
+union
+select * from object
+
+
+
+
+Задача 33 (Whales)
+Найти "китов" (игроков с максимальной стоимостью инвентаря).
+
+SELECT username, balanc_invent AS max_balans
+FROM (
+    SELECT username, SUM(value) AS balanc_invent
+    FROM players t1
+    LEFT JOIN inventory t2 ON t1.player_id = t2.player_id
+    LEFT JOIN items t3 ON t2.item_id = t3.item_id
+    WHERE value IS NOT NULL
+    GROUP BY username
+) AS subquery
+ORDER BY balanc_invent DESC
+limit 1
+
+
+Задача 34 (Balance issue)
+Найти:
+
+слишком сильные предметы (очень высокий value)
+```sql
+select name, value
+from items
+order by value desc
+limit 1
+
+
+
+🧠 9. СЛОЖНЫЙ УРОВЕНЬ (витрина данных)
+
+Задача 35
+Собрать витрину игрока:
+
+player_id
+username
+количество персонажей
+средний уровень персонажей
+суммарная стоимость инвентаря
+самый сильный персонаж
+
+Задача 36
+Определить:
+
+"новичков" (низкий уровень)
+"ветеранов" (высокий уровень)
+
+Задача 37
+Найти аномалии:
+
+игроки без инвентаря
+персонажи без предметов
+предметы, которые никто не использует
+
+Задача 38
+Сделать полный аналитический отчёт:
+
+сколько игроков
+средний уровень
+топ-10 игроков
+топ предметов
+распределение классов
+
+Задача 39
+Добавте нового игрока
+
+Задача 40
+Удалите нарушителя
+ID 18
