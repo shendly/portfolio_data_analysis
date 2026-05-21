@@ -1,127 +1,4 @@
-
-1. Таблица players (игроки)
-
-Хранит аккаунты пользователей.
-
-Поля:
-
-player_id (PK) — уникальный ID игрока
-username — никнейм
-email — почта
-created_at — дата регистрации
-level — уровень аккаунта
-
-Назначение:
-Основная таблица пользователей игры.
-
-2. Таблица characters (персонажи)
-
-Игровые персонажи, принадлежащие игрокам.
-
-Поля:
-
-character_id — ID персонажа
-player_id (PK)  — владелец
-name — имя персонажа
-class — класс (воин, маг и т.д.)
-
-
-
-3. Таблица items (предметы)
-
-Все игровые предметы.
-
-Поля:
-
-item_id (PK) — ID предмета
-name — название
-type — тип (оружие, броня, зелье)
-rarity — редкость
-value — стоимость
-
-Назначение:
-Каталог всех предметов в игре.
-
-4. Таблица inventory (инвентарь)
-
-Связь персонажей и предметов (многие-ко-многим).
-
-Поля:
-
-inventory_id (PK) — ID записи
-character_id (FK → characters.character_id) — персонаж
-item_id (FK → items.item_id) — предмет
-quantity — количество
-
-Назначение:
-Показывает, какие предметы есть у персонажа.
-
-5. Таблица quests (квесты)
-
-Игровые задания.
-
-Поля:
-
-quest_id (PK) — ID квеста
-title — название
-reward_gold — награда (золото)
-reward_exp — опыт
-
-Назначение:
-Список всех доступных квестов.
-
-
-
-***********************************************************************
-
-
-Таблица №1
-CREATE TABLE players(
-	player_id INTEGER PRIMARY KEY,
-	username VARCHAR(100) NOT NULL,
-	email VARCHAR(150),
-	created_at DATE NOT NULL,
-	level INTEGER
-)
-
-Таблица №2
-CREATE TABLE characters(
-	character_id INTEGER,
-	player_id INTEGER PRIMARY KEY,
-	name VARCHAR(150),
-	class VARCHAR(50)
-)
-
-Таблица №3
-CREATE TABLE inventory(
-	inventory_id INTEGER PRIMARY KEY,
-	player_id INTEGER,
-	item_id INTEGER,
-	quantity INTEGER
-)
-
-
-Таблица №4
-CREATE TABLE items(
-	item_id INTEGER PRIMARY KEY,
-	name VARCHAR(150),
-	type VARCHAR(100),
-	rarity VARCHAR(100),
-	value INTEGER
-)
-
-Таблица №5
-CREATE TABLE quests(
-	quest_id INTEGER PRIMARY KEY,
-	title VARCHAR(300),
-	reward_gold INTEGER,
-	reward_exp INTEGER
-)
-
-
-
-*****************************************************************************************
-
+Задачи:
 
 🟢 1. БАЗА (SELECT, WHERE)
 
@@ -476,7 +353,7 @@ order by sum_value desc
 limit 5)
 
 select username,segment from top_level
-union
+union 
 select username,segment from top_person
 union
 select username,segment from top_value
@@ -538,9 +415,8 @@ where count > 5
 )
 
 select * from person_2
-union
+union all
 select * from object
-
 
 
 
@@ -563,16 +439,16 @@ limit 1
 Задача 34 (Balance issue)
 Найти:
 
-слишком сильные предметы (очень высокий value)
-```sql
-select name, value
-from items
-order by value desc
+Самый выгодный квест по получению золота
+
+select title, reward_gold
+from quests
+order by reward_gold desc
 limit 1
 
 
 
-🧠 9. СЛОЖНЫЙ УРОВЕНЬ (витрина данных)
+🧠 9. Витрина данных
 
 Задача 35
 Собрать витрину игрока:
@@ -580,7 +456,7 @@ limit 1
 player_id
 username
 количество персонажей
-средний уровень персонажей
+средний уровень
 суммарная стоимость инвентаря
 самый сильный персонаж
 
@@ -611,4 +487,9 @@ username
 
 Задача 40
 Удалите нарушителя
-ID 18
+ID 181
+
+Задача 41
+Обновите почту на @yandex.ru у ID 18
+
+
