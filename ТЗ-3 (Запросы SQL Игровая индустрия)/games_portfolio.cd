@@ -13,7 +13,7 @@ WHERE created_at >= DATE_TRUNC('month', NOW())
 Задача 2
 Найти игроков выше 20 уровня.
 
-```sql
+
 select * 
 from players
 where level >= '20'
@@ -458,38 +458,85 @@ username
 количество персонажей
 средний уровень
 суммарная стоимость инвентаря
-самый сильный персонаж
+
+```sql
+select player_id, t1.username, count_pers, avg_level, price
+from players t1
+left join (select username, count(name) as count_pers, avg(level) as avg_level, sum(price_invent) as price
+			from players t1
+			left join characters t2
+			on t1.player_id = t2.player_id
+			left join (select player_id, sum(value) as price_invent
+						from inventory t1 
+						left join items t2
+						on t1.item_id = t2.item_id
+						group by player_id
+						) t3
+			on t1.player_id = t3.player_id
+			group by username
+			) t2
+on t1.username = t2.username
 
 Задача 36
 Определить:
 
-"новичков" (низкий уровень)
-"ветеранов" (высокий уровень)
+"новичков" (низкий уровень - ниже 50)
+"ветеранов" (высокий уровень - больше 50)
+
+```sql
+select *, case
+			when level >= 50 then 'ветеран'
+			else 'новичок' end as category
+from players
+
+
 
 Задача 37
-Найти аномалии:
-
-игроки без инвентаря
-персонажи без предметов
-предметы, которые никто не использует
-
-Задача 38
 Сделать полный аналитический отчёт:
 
-сколько игроков
+сколько всего игроков
 средний уровень
-топ-10 игроков
-топ предметов
-распределение классов
+топ-1 игрок по уровню
+ник самого первый игрока по id
 
-Задача 39
+```sql
+select count_players,avg_all_level, top_1_username_lvl, number_1_player
+from(select '1' as num_join, count(username) as count_players
+	from players) t1
+left join (select '1' as num_join, avg(level) as avg_all_level
+			from players) t2
+on t1.num_join = t2.num_join
+left join (select '1' as num_join, username as top_1_username_lvl
+			from players
+			where level = (select max(level)
+			from players)) t3
+on t2.num_join = t3.num_join
+left join (select '1' as num_join, username as number_1_player
+			from players
+			where player_id = (select min(player_id)
+								from players)) t4
+on t3.num_join = t4.num_join
+
+
+10. Манипулирование данными
+
+Задача 38
 Добавте нового игрока
 
-Задача 40
-Удалите нарушителя
-ID 181
+INSERT INTO players (player_id, username, email, created_at, level)
+VALUES (181, 'Banned_Cheter', 'chitak@gmail.ru', '18.06.2026', 999)
 
-Задача 41
-Обновите почту на @yandex.ru у ID 18
+
+Задача 39
+Удалите нарушителя (ID 181)
+
+DELETE FROM players WHERE player_id = '181'
+
+Задача 40
+Исправьте почту на @yandex.ru у ID 118
+
+UPDATE players
+SET email = 'Cyber_Ninja@yandex.ru'
+WHERE player_id = 118;
 
 
